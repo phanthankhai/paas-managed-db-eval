@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Environment & Secrets (TUYET DOI KHONG COMMIT SECRET LEN GIT)
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Prisma
+dev.db
+dev.db-journal
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,105 @@
+name: CI/CD Pipeline - PaaS Automated Build, Test & Deploy
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Run Automated Tests & Migrations
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgrespassword
+          POSTGRES_DB: paas_test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Prisma Client Generation
+        run: npx prisma generate
+
+      - name: Run Prisma Database Migrations
+        env:
+          DATABASE_URL: postgresql://postgres:postgrespassword@localhost:5432/paas_test_db
+        run: npx prisma migrate deploy
+
+      - name: Execute Automated Test Suite (Jest + Supertest)
+        env:
+          DATABASE_URL: postgresql://postgres:postgrespassword@localhost:5432/paas_test_db
+          NODE_ENV: test
+        run: npm test
+
+  deploy:
+    name: Deploy to PaaS (Render / Fly.io)
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Kích hoạt Deploy qua PaaS Deploy Webhook (Render Blueprint / Web Service)
+      - name: Trigger PaaS Deploy Webhook
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK" ]; then
+            echo "⚠️ RENDER_DEPLOY_HOOK secret is not set. Skipping webhook trigger (manual deployment or Git sync)."
+          else
+            echo "🚀 Triggering PaaS Deployment..."
+            curl -X POST "$RENDER_DEPLOY_HOOK"
+          fi
+
+      # Kiểm chứng Health Check sau triển khai (Post-deployment Verification)
+      - name: Post-Deploy Health Check Verification
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+        run: |
+          if [ -z "$APP_URL" ]; then
+            echo "ℹ️ APP_URL secret is not set. Skipping live health probe."
+            exit 0
+          fi
+
+          echo "🔍 Checking live application readiness at $APP_URL/readyz..."
+          MAX_RETRIES=20
+          COUNT=0
+          until [ $COUNT -ge $MAX_RETRIES ]
+          do
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$APP_URL/readyz" || echo "000")
+            if [ "$HTTP_STATUS" -eq "200" ]; then
+              echo "✅ Application deployed successfully and is HEALTHY (HTTP 200)!"
+              exit 0
+            fi
+            echo "⏳ Waiting for zero-downtime rolling update (attempt $((COUNT+1))/$MAX_RETRIES - status $HTTP_STATUS)..."
+            COUNT=$((COUNT+1))
+            sleep 10
+          done
+
+          echo "❌ Deployment verification FAILED! Health check did not return 200 within 200s."
+          echo "🚨 Initiating Rollback notice..."
+          exit 1

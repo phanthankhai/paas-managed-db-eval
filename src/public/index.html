@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đề tài 8: PaaS & Managed Database Evaluation</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header class="app-header">
+    <div class="container header-container">
+      <div>
+        <div class="badge">Đề tài 8 - Điện toán đám mây & DevOps</div>
+        <h1>PaaS & Managed Database Evaluation Platform</h1>
+        <p class="subtitle">Đánh giá gánh nặng vận hành, tính năng Rollback, Health Check và Twelve-Factor App</p>
+      </div>
+      <div class="platform-card" id="platformBadge">
+        <div class="status-indicator" id="overallStatusDot"></div>
+        <div>
+          <div class="platform-title" id="platformName">Đang tải platform...</div>
+          <div class="platform-meta" id="appVersion">Version: ...</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container main-content">
+    <!-- Diagnostics & Health Section -->
+    <section class="grid-section">
+      <div class="card">
+        <div class="card-header">
+          <h3>🩺 Liveness Probe (<span class="mono">/healthz</span>)</h3>
+          <button class="btn btn-sm btn-secondary" onclick="checkLiveness()">Kiểm tra lại</button>
+        </div>
+        <div class="card-body">
+          <div class="stat-row">
+            <span class="stat-label">Trạng thái:</span>
+            <span class="stat-val badge badge-success" id="livenessStatus">...</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Uptime:</span>
+            <span class="stat-val mono" id="uptimeVal">...</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Bộ nhớ (Heap/RSS):</span>
+            <span class="stat-val mono" id="memoryVal">...</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3>🗄️ Readiness Probe (<span class="mono">/readyz</span>)</h3>
+          <button class="btn btn-sm btn-secondary" onclick="checkReadiness()">Kiểm tra lại</button>
+        </div>
+        <div class="card-body">
+          <div class="stat-row">
+            <span class="stat-label">Trạng thái Router:</span>
+            <span class="stat-val badge badge-success" id="readinessStatus">...</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Cơ sở dữ liệu:</span>
+            <span class="stat-val" id="dbHealthMsg">...</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">DB Ping Latency:</span>
+            <span class="stat-val mono" id="dbLatency">...</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3>⚙️ Twelve-Factor Factors</h3>
+        </div>
+        <div class="card-body factors-list">
+          <div class="factor-tag">✓ III. External Config (Env)</div>
+          <div class="factor-tag">✓ IV. Backing Services (Managed DB)</div>
+          <div class="factor-tag">✓ VI. Stateless Processes</div>
+          <div class="factor-tag">✓ IX. Disposable & Fast Shutdown</div>
+          <div class="factor-tag">✓ XI. Stream Logs to stdout</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CRUD Application Management -->
+    <section class="crud-section">
+      <div class="section-title-bar">
+        <h2>📋 Quản lý danh mục Items (CRUD Demo)</h2>
+        <div class="actions-group">
+          <button class="btn btn-primary" onclick="openModal()">+ Thêm Item Mới</button>
+          <button class="btn btn-secondary" onclick="loadItems()">🔄 Làm mới</button>
+        </div>
+      </div>
+
+      <!-- Filters & Source -->
+      <div class="filters-bar">
+        <div class="filter-item">
+          <label>Nguồn dữ liệu hiện tại:</label>
+          <span class="badge badge-info" id="dataSourceBadge">PostgreSQL</span>
+        </div>
+        <div class="filter-item">
+          <label for="filterStatus">Lọc trạng thái:</label>
+          <select id="filterStatus" onchange="loadItems()">
+            <option value="">Tất cả</option>
+            <option value="ACTIVE">ACTIVE</option>
+            <option value="COMPLETED">COMPLETED</option>
+            <option value="ARCHIVED">ARCHIVED</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Items Table -->
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 60px;">ID</th>
+              <th>Tiêu đề & Nội dung</th>
+              <th style="width: 130px;">Phân loại</th>
+              <th style="width: 100px;">Ưu tiên</th>
+              <th style="width: 120px;">Trạng thái</th>
+              <th style="width: 150px;">Thời gian tạo</th>
+              <th style="width: 140px; text-align: right;">Hành động</th>
+            </tr>
+          </thead>
+          <tbody id="itemsTableBody">
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 2rem;">Đang tải danh sách items...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- Create / Edit Modal -->
+  <div class="modal" id="itemModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="modalTitle">Thêm Item Mới</h3>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="itemId">
+        <div class="form-group">
+          <label for="itemTitle">Tiêu đề <span class="required">*</span></label>
+          <input type="text" id="itemTitle" class="form-control" placeholder="Nhập tiêu đề công việc / tác vụ...">
+        </div>
+        <div class="form-group">
+          <label for="itemDescription">Mô tả chi tiết</label>
+          <textarea id="itemDescription" class="form-control" rows="3" placeholder="Nhập nội dung mô tả..."></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group col">
+            <label for="itemCategory">Phân loại</label>
+            <input type="text" id="itemCategory" class="form-control" value="DevOps">
+          </div>
+          <div class="form-group col">
+            <label for="itemPriority">Độ ưu tiên (1-5)</label>
+            <select id="itemPriority" class="form-control">
+              <option value="1">1 - Thấp</option>
+              <option value="2">2 - Trung bình</option>
+              <option value="3" selected>3 - Bình thường</option>
+              <option value="4">4 - Cao</option>
+              <option value="5">5 - Khẩn cấp</option>
+            </select>
+          </div>
+          <div class="form-group col">
+            <label for="itemStatus">Trạng thái</label>
+            <select id="itemStatus" class="form-control">
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="COMPLETED">COMPLETED</option>
+              <option value="ARCHIVED">ARCHIVED</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal()">Hủy</button>
+        <button class="btn btn-primary" onclick="saveItem()">Lưu thay đổi</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <div class="container footer-content">
+      <div>Đề tài 8: Phát triển ứng dụng PaaS có cơ sở dữ liệu được quản lý và đánh giá gánh nặng vận hành</div>
+      <div class="mono">Endpoints: /healthz | /readyz | /api/items</div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
