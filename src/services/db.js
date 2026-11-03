@@ -15,6 +15,13 @@ if (env.DATABASE_URL) {
  */
 async function checkDbHealth() {
   if (!prisma) {
+    if (env.DEV_MOCK_DB) {
+      return {
+        connected: true,
+        message: 'Chế độ Local Mock In-Memory DB (Đang bật DEV_MOCK_DB=true)',
+        latencyMs: 1,
+      };
+    }
     return {
       connected: false,
       message: 'Chưa cấu hình DATABASE_URL (hãy cung cấp connection string của PostgreSQL)',

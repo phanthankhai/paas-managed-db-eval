@@ -10,6 +10,9 @@ const env = {
   // Flag dung cho thi nghiem Rollback (Factor IX & resilience test)
   // Neu SIMULATE_FAILURE=true, ung dung se danh rot health check hoac crash ngay khi khoi dong
   SIMULATE_FAILURE: process.env.SIMULATE_FAILURE === 'true',
+
+  // Cờ cho phép giả lập DB Ready khi test offline cục bộ chưa cấu hình PostgreSQL
+  DEV_MOCK_DB: process.env.DEV_MOCK_DB === 'true',
 };
 
 // Mask sensitive connection string khi log
