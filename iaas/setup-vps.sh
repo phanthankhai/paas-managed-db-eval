@@ -59,3 +59,4 @@ docker compose up -d --build
 
 echo "=== [HOAN TAT] IaaS da duoc thiet lap. Tong thoi gian uoc tinh: 30 - 60 phut ==="
 echo "So sanh voi PaaS: Chi mat 1 click hoac 2 phut day len Git!"
+

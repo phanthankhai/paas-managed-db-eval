@@ -33,18 +33,25 @@ export default function () {
 
   // 1. Kiểm tra Liveness Health check
   const healthRes = http.get(`${BASE_URL}/healthz`);
-  check(healthRes, {
+  const isHealthOk = check(healthRes, {
     'healthz status is 200': (r) => r.status === 200,
-    'healthz status is UP': (r) => JSON.parse(r.body).status === 'UP',
+    'healthz status is UP': (r) => {
+      try {
+        const body = JSON.parse(r.body);
+        return body && body.status === 'UP';
+      } catch (e) {
+        return false;
+      }
+    },
   });
-  errorRate.add(healthRes.status !== 200);
+  errorRate.add(!isHealthOk);
 
   // 2. Lấy danh sách Items (GET /api/items)
   const listRes = http.get(`${BASE_URL}/api/items`);
-  check(listRes, {
+  const isListOk = check(listRes, {
     'GET /api/items status is 200': (r) => r.status === 200,
   });
-  errorRate.add(listRes.status !== 200);
+  errorRate.add(!isListOk);
   crudOpsCounter.add(1);
 
   // 3. Tạo mới 1 item ngẫu nhiên (POST /api/items)
@@ -73,13 +80,14 @@ export default function () {
   // 4. Nếu tạo thành công, đọc chi tiết item đó (GET /api/items/:id)
   if (createdId) {
     const getOneRes = http.get(`${BASE_URL}/api/items/${createdId}`);
-    check(getOneRes, {
+    const isGetOneOk = check(getOneRes, {
       'GET /api/items/:id status is 200': (r) => r.status === 200,
     });
-    errorRate.add(getOneRes.status !== 200);
+    errorRate.add(!isGetOneOk);
     crudOpsCounter.add(1);
   }
 
   // Giãn cách ngẫu nhiên 0.5s - 1.5s giữa các lần lặp của user
   sleep(Math.random() + 0.5);
 }
+

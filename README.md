@@ -136,3 +136,4 @@ Trong thư mục `iaas/`, chúng tôi cung cấp file `docker-compose.yml`, `ngi
   docker compose up -d --build
   ```
 - Hãy đọc bảng so sánh đầy đủ 15+ tiêu chí vận hành, quản trị bản vá, backup và tổng chi phí sở hữu (TCO) trong file **`BAO_CAO_DE_TAI_8.md`**.
+

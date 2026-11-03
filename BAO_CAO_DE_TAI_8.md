@@ -198,3 +198,4 @@ Thực nghiệm đo lường với k6 kịch bản tăng từ 10 $\rightarrow$ 3
 1. **Hiệu quả của PaaS:** PaaS là giải pháp vượt trội cho các nhóm phát triển phần mềm vừa và nhỏ, startup, giúp đưa sản phẩm ra thị trường (Time-to-Market) nhanh gấp 10 lần so với IaaS truyền thống mà không đòi hỏi đội ngũ vận hành chuyên trách.
 2. **Kiểm soát rủi ro:** Để tránh hiện tượng Vendor Lock-in khi dùng PaaS, nhóm phát triển phải tuân thủ nghiêm ngặt mô hình **Twelve-Factor App**, sử dụng cơ sở dữ liệu mã nguồn mở chuẩn (như PostgreSQL) và ORM có khả năng di động cao (như Prisma).
 3. **Rollback & Resilience:** Cơ chế Health Check (Readiness Probe) kết hợp với Rolling Update của PaaS cung cấp khả năng tự phục hồi và bảo vệ hệ thống tuyệt vời khi xảy ra sự cố phát hành sai phiên bản.
+

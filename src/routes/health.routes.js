@@ -9,3 +9,4 @@ router.get('/healthz', healthController.getLiveness);
 router.get('/readyz', healthController.getReadiness);
 
 module.exports = router;
+
