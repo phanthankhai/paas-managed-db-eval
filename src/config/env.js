@@ -5,7 +5,17 @@ const env = {
   PORT: parseInt(process.env.PORT || '3000', 10),
   DATABASE_URL: process.env.DATABASE_URL || '',
   APP_VERSION: process.env.APP_VERSION || '1.0.0',
-  PLATFORM: process.env.RENDER ? 'Render PaaS' : (process.env.FLY_APP_NAME ? 'Fly.io PaaS' : 'Local / Custom'),
+  PLATFORM: process.env.RENDER
+    ? 'Render PaaS'
+    : (process.env.FLY_APP_NAME
+      ? 'Fly.io PaaS'
+      : (process.env.K_SERVICE
+        ? 'Google Cloud Run'
+        : (process.env.RAILWAY_ENVIRONMENT
+          ? 'Railway PaaS'
+          : (process.env.HEROKU_APP_NAME
+            ? 'Heroku PaaS'
+            : 'Local / Custom')))),
   
   // Flag dung cho thi nghiem Rollback (Factor IX & resilience test)
   // Neu SIMULATE_FAILURE=true, ung dung se danh rot health check hoac crash ngay khi khoi dong

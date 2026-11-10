@@ -312,6 +312,28 @@ tr:hover {
   background-color: #e2e8f0;
 }
 
+.btn-danger {
+  background-color: var(--danger);
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: #dc2626;
+}
+
+.btn-success {
+  background-color: var(--success);
+  color: white;
+}
+
+.btn-success:hover {
+  background-color: #059669;
+}
+
+.highlight-card {
+  border-left: 4px solid var(--primary);
+}
+
 .btn-sm {
   padding: 0.25rem 0.5rem;
   font-size: 0.8rem;

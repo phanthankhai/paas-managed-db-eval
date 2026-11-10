@@ -25,6 +25,18 @@ let inMemoryItems = [
 ];
 let nextId = 3;
 
+const VALID_STATUSES = ['ACTIVE', 'COMPLETED', 'ARCHIVED'];
+
+/**
+ * Helper parse priority hợp lệ (1-5, mặc định 1)
+ */
+function parsePriority(val, defaultVal = 1) {
+  if (val === undefined || val === null) return defaultVal;
+  const p = parseInt(val, 10);
+  if (isNaN(p) || p < 1 || p > 5) return defaultVal;
+  return p;
+}
+
 /**
  * GET /api/items - Lấy danh sách items (hỗ trợ lọc status, category)
  */
@@ -96,12 +108,13 @@ async function createItem(req, res) {
       return res.status(400).json({ success: false, error: 'Tiêu đề (title) là bắt buộc' });
     }
 
+    const itemStatus = status && VALID_STATUSES.includes(status) ? status : 'ACTIVE';
     const payload = {
       title: title.trim(),
-      description: description ? description.trim() : null,
-      category: category ? category.trim() : 'General',
-      status: status || 'ACTIVE',
-      priority: priority ? parseInt(priority, 10) : 1,
+      description: description ? String(description).trim() : null,
+      category: category ? String(category).trim() : 'General',
+      status: itemStatus,
+      priority: parsePriority(priority, 1),
     };
 
     if (prisma) {
@@ -136,18 +149,49 @@ async function updateItem(req, res) {
 
     const { title, description, category, status, priority } = req.body;
     const updateData = {};
-    if (title !== undefined) updateData.title = title.trim();
-    if (description !== undefined) updateData.description = description ? description.trim() : null;
-    if (category !== undefined) updateData.category = category.trim();
-    if (status !== undefined) updateData.status = status;
-    if (priority !== undefined) updateData.priority = parseInt(priority, 10);
+    if (title !== undefined) {
+      if (typeof title !== 'string' || title.trim() === '') {
+        return res.status(400).json({ success: false, error: 'Tiêu đề (title) không được để trống' });
+      }
+      updateData.title = title.trim();
+    }
+    if (description !== undefined) {
+      updateData.description = description ? String(description).trim() : null;
+    }
+    if (category !== undefined) {
+      updateData.category = category ? String(category).trim() : 'General';
+    }
+    if (status !== undefined) {
+      if (!VALID_STATUSES.includes(status)) {
+        return res.status(400).json({
+          success: false,
+          error: `Trạng thái (status) không hợp lệ. Các giá trị cho phép: ${VALID_STATUSES.join(', ')}`,
+        });
+      }
+      updateData.status = status;
+    }
+    if (priority !== undefined && priority !== null) {
+      const p = parseInt(priority, 10);
+      if (isNaN(p) || p < 1 || p > 5) {
+        return res.status(400).json({ success: false, error: 'Độ ưu tiên (priority) phải là số từ 1 đến 5' });
+      }
+      updateData.priority = p;
+    }
 
     if (prisma) {
-      const updated = await prisma.item.update({
-        where: { id },
-        data: updateData,
-      });
-      return res.json({ success: true, source: 'PostgreSQL', data: updated });
+      try {
+        const updated = await prisma.item.update({
+          where: { id },
+          data: updateData,
+        });
+        return res.json({ success: true, source: 'PostgreSQL', data: updated });
+      } catch (prismaErr) {
+        // Prisma P2025: Record to update not found -> trả về 404
+        if (prismaErr.code === 'P2025') {
+          return res.status(404).json({ success: false, error: 'Không tìm thấy item' });
+        }
+        throw prismaErr;
+      }
     }
 
     // Fallback
@@ -178,8 +222,16 @@ async function deleteItem(req, res) {
     }
 
     if (prisma) {
-      await prisma.item.delete({ where: { id } });
-      return res.json({ success: true, message: `Đã xóa item #${id} thành công` });
+      try {
+        await prisma.item.delete({ where: { id } });
+        return res.json({ success: true, message: `Đã xóa item #${id} thành công` });
+      } catch (prismaErr) {
+        // Prisma P2025: Record to delete not found -> trả về 404
+        if (prismaErr.code === 'P2025') {
+          return res.status(404).json({ success: false, error: 'Không tìm thấy item' });
+        }
+        throw prismaErr;
+      }
     }
 
     // Fallback

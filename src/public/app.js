@@ -3,6 +3,7 @@ const API_BASE = '';
 
 // Khởi chạy khi load trang
 document.addEventListener('DOMContentLoaded', () => {
+  fetchSimulationStatus();
   checkLiveness();
   checkReadiness();
   loadItems();
@@ -11,8 +12,72 @@ document.addEventListener('DOMContentLoaded', () => {
   setInterval(() => {
     checkLiveness();
     checkReadiness();
+    fetchSimulationStatus();
   }, 10000);
 });
+
+/**
+ * Lấy trạng thái mô phỏng sự cố từ backend
+ */
+async function fetchSimulationStatus() {
+  try {
+    const res = await fetch(`${API_BASE}/api/simulate-failure`);
+    const data = await res.json();
+    const simBadge = document.getElementById('simBadge');
+    const outageBanner = document.getElementById('outageBanner');
+
+    if (data.simulateFailure) {
+      if (simBadge) {
+        simBadge.textContent = '⚠️ SỰ CỐ ĐANG KÍCH HOẠT';
+        simBadge.className = 'badge badge-danger';
+      }
+      if (outageBanner) outageBanner.style.display = 'block';
+    } else {
+      if (simBadge) {
+        simBadge.textContent = 'Trạng thái: Bình thường';
+        simBadge.className = 'badge badge-success';
+      }
+      if (outageBanner) outageBanner.style.display = 'none';
+    }
+  } catch (err) {
+    console.error('Không thể lấy trạng thái simulation:', err);
+  }
+}
+
+/**
+ * Kích hoạt hoặc Tắt giả lập sự cố (phục vụ thí nghiệm Rollback & MTTR)
+ */
+async function simulateFailure(enable) {
+  const alertMsg = document.getElementById('simAlertMsg');
+  if (alertMsg) {
+    alertMsg.style.display = 'block';
+    alertMsg.textContent = enable ? 'Đang kích hoạt sự cố...' : 'Đang phục hồi (Rollback)...';
+    alertMsg.style.color = enable ? '#dc2626' : '#16a34a';
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/simulate-failure`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enable }),
+    });
+    const data = await res.json();
+
+    if (alertMsg) {
+      alertMsg.textContent = data.message;
+    }
+
+    // Refresh ngay trạng thái
+    await fetchSimulationStatus();
+    await checkLiveness();
+    await checkReadiness();
+  } catch (err) {
+    if (alertMsg) {
+      alertMsg.textContent = 'Lỗi kết nối khi gửi yêu cầu giả lập!';
+      alertMsg.style.color = '#dc2626';
+    }
+  }
+}
 
 /**
  * Kiểm tra /healthz

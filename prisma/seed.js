@@ -1,3 +1,11 @@
+require('dotenv').config();
+
+if (!process.env.DATABASE_URL) {
+  console.log('⚠️ Biến môi trường DATABASE_URL chưa được cấu hình.');
+  console.log('ℹ️ Hệ thống đang hoạt động với dữ liệu khởi tạo sẵn trong bộ nhớ In-Memory Mock. Bỏ qua seed PostgreSQL.');
+  process.exit(0);
+}
+
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 

@@ -57,11 +57,14 @@ cp .env.example .env
 ```bash
 npm test
 ```
-Kết quả kiểm thử tự động:
-- Kiểm tra Liveness Probe (`/healthz`)
-- Kiểm tra Readiness Probe (`/readyz`)
+Kết quả kiểm thử tự động (17 bài kiểm thử toàn diện):
+- Kiểm tra Liveness Probe (`/healthz` báo UP 200)
+- Kiểm tra Readiness Probe (`/readyz` kiểm tra kết nối DB)
 - Kiểm thử đầy đủ quy trình CRUD (`GET`, `POST`, `PUT`, `DELETE /api/items`)
-- Kiểm tra validation dữ liệu đầu vào
+- Kiểm tra validation dữ liệu đầu vào (title rỗng, status không hợp lệ, priority ngoài khoảng 1-5)
+- Kiểm tra xử lý lỗi ID không hợp lệ (400) và ID không tồn tại (404)
+- Kiểm tra cơ chế mô phỏng sự cố và phục hồi (`POST /api/simulate-failure`)
+- Kiểm tra metadata hệ thống (`/api/info`) và 404 Route Handler
 
 ### Bước 3: Khởi động máy chủ ứng dụng
 ```bash

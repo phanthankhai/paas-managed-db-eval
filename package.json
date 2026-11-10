@@ -10,7 +10,9 @@
     "prisma:migrate": "prisma migrate deploy",
     "prisma:dev": "prisma migrate dev",
     "prisma:seed": "node prisma/seed.js",
-    "test": "jest --detectOpenHandles --forceExit"
+    "test": "jest --detectOpenHandles --forceExit",
+    "test:manual": "node tests/manual-test.js",
+    "test:load": "k6 run tests/k6-load-test.js"
   },
   "keywords": [
     "paas",

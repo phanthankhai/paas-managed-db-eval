@@ -33,6 +33,7 @@ export default function () {
 
   // 1. Kiểm tra Liveness Health check
   const healthRes = http.get(`${BASE_URL}/healthz`);
+  latencyTrend.add(healthRes.timings.duration);
   const isHealthOk = check(healthRes, {
     'healthz status is 200': (r) => r.status === 200,
     'healthz status is UP': (r) => {
@@ -48,6 +49,7 @@ export default function () {
 
   // 2. Lấy danh sách Items (GET /api/items)
   const listRes = http.get(`${BASE_URL}/api/items`);
+  latencyTrend.add(listRes.timings.duration);
   const isListOk = check(listRes, {
     'GET /api/items status is 200': (r) => r.status === 200,
   });
@@ -64,6 +66,7 @@ export default function () {
   });
 
   const createRes = http.post(`${BASE_URL}/api/items`, randomPayload, { headers });
+  latencyTrend.add(createRes.timings.duration);
   const isCreated = check(createRes, {
     'POST /api/items status is 201': (r) => r.status === 201,
   });
@@ -80,6 +83,7 @@ export default function () {
   // 4. Nếu tạo thành công, đọc chi tiết item đó (GET /api/items/:id)
   if (createdId) {
     const getOneRes = http.get(`${BASE_URL}/api/items/${createdId}`);
+    latencyTrend.add(getOneRes.timings.duration);
     const isGetOneOk = check(getOneRes, {
       'GET /api/items/:id status is 200': (r) => r.status === 200,
     });

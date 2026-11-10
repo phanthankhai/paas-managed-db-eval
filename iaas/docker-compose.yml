@@ -29,6 +29,7 @@ services:
       dockerfile: Dockerfile
     container_name: iaas_node_app
     restart: always
+    command: sh -c "npx prisma migrate deploy && node src/server.js"
     environment:
       - NODE_ENV=production
       - PORT=3000
