@@ -8,7 +8,7 @@ services:
     runtime: node
     plan: free
     region: singapore # Hoac oregon / frankfurt
-    buildCommand: npm install && npx prisma generate && npx prisma migrate deploy
+    buildCommand: npm install && npx prisma generate && npx prisma migrate deploy && node prisma/seed.js
     startCommand: npm start
     healthCheckPath: /readyz # Platform routing dung path nay de kiem tra rolling update
     autoDeploy: true
